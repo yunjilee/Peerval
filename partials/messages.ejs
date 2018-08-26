@@ -1,0 +1,17 @@
+<% if(success_msg){%>
+    <div  style="color: white"><%=success_msg%></div>
+<%}%>
+<% if(error_msg){%>
+    <div  style="color: white"><%=error_msg%></div>
+<%}%>
+<%if(error){%>
+<div  style="color: white"><%=error%></div>
+<%}%>
+
+<% if(errors){
+    for(var i = 0; i < errors.length; i++){
+        %>
+            <div style="color: #ff4046"><%=errors[i].msg%></div>
+        <%
+    }
+}%>

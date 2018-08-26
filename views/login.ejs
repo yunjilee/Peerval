@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <%include ../partials/head%>
+
+    <link rel='stylesheet' href='/stylesheets/login-signup.css' />
+</head>
+<body>
+<header>
+    <% include ../partials/navbar%>
+</header>
+
+<div id="cloud-background">
+    <img id="cloud-img"src="/images/cloud-background.png" alt="Image could not be loaded">
+</div>
+
+<div class="middle-box">
+    <h2>Log In</h2>
+    <div id="inner-box">
+        <div><%include ../partials/messages%></div>
+        <form name="login-form" action="/users/login" method="POST">
+            Email: <input name="email" type="text" class="field"><br>
+            Password: <input name="password" type="password" class="field"><br> <br>
+            <input class="blue-btn" type="submit" value="Login"><br>
+        </form>
+    </div>
+    <p>Don't have an account? <a href="signup" style="text-decoration: underline;">Sign up</a></p>
+</div>
+</body>
+</html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <%include ../partials/head%>
+
+    <script
+            src="https://code.jquery.com/jquery-3.2.1.min.js"
+            integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+            crossorigin="anonymous"></script>
+    <link rel='stylesheet' href='/stylesheets/dash.css' />
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+
+    <script>
+        var reviewableEssays = [];
+
+        getSearchResults();
+
+        function getSearchResults(){
+            $.ajax({
+                type: "POST",
+                url: "/files/getSearchResults",
+                success: function(result){
+                    var container = document.getElementById("results-container");
+
+                    var percentage = result.length/2 * 80;
+                    document.getElementsByClassName("tab-area").item(2).style.height =  percentage<100 ? 100 : percentage + "%";
+
+                    result.forEach(function(essay) {
+                        reviewableEssays.push(essay);
+                        var dueDate = new Date(essay.dueDate);
+                        var div = document.createElement("div");
+                        div.innerHTML = ""
+                        + "<div class='review-result'> "
+                            + "<h3>" + essay.title + "</h3>"
+                            + "<div class='reviewer_tab_essay_info_1'>"
+                                + "Priority:&nbsp&nbsp"+essay.priority +"<br>"
+                                + "Due Date:&nbsp&nbsp"+dueDate.toDateString().substring(3) + "<br>"
+                                + "Course:&nbsp&nbsp"+essay.classPrefix+"&nbsp&nbsp"+essay.classLevel +"<br>"
+                                + "Page Length:&nbsp&nbsp"+ essay.pageLength
+                            + "</div>"
+                            + "<div class='reviewer_tab_essay_info_2'>"
+                                + "Topic:&nbsp&nbsp"+essay.topic +"<br>"
+                                + "Prompt:&nbsp&nbsp"+ essay.prompt +"<br>"
+                            + "</div>"
+                        + "    <div class='reviewer_side_buttons_div'>"
+                            + "        <button class='reward-button'>$" + essay.rewardAmt + "</button><br>"
+                            + "        <button onclick='openLinkNewWindow(\"" + "/files/acceptReview?fileId=" + essay.fileId + "&id=" + essay.id + "\")' class='reviewer_side_button'>Accept Review</button><br>"
+                            + "        <button onclick='submitReview(\"" + essay.id + "\")' class='reviewer_side_button'>Submit Review</button><br>"
+                        + "    </div>"
+                        +"</div> ";
+
+                        container.appendChild(div);
+                    })
+                }
+            });
+        }
+
+        function submitReview(id) {
+            $.ajax({
+                type: "POST",
+                url: "/files/submitReview?id=" + id,
+                success: function(result){
+
+                }
+            });
+        }
+
+        function openLinkNewWindow(link){
+            window.open(link, '_blank');
+        }
+
+    function openTab(updateSection, tabName) {
+        //if this function was called by click on tab then update left panel
+        if(updateSection){
+            //if not in the uplaod area, un-highlight the left panel
+            if(tabName != "uploaded") {
+                var sidelinks = document.getElementsByClassName("side-link-button");
+                for (var k = 0; k < sidelinks.length; k++) {
+                    sidelinks[k].className = sidelinks[k].className.replace(" side-highlight", "");
+                }
+            }
+            else {
+                essaySection("inProgress");
+            }
+        }
+        //display the area associated with the tab just clicked
+        var i;
+        var x = document.getElementsByClassName("tab-area");
+        for (i = 0; i < x.length; i++) {
+         x[i].style.display = "none";
+        }
+
+        var tablinks = document.getElementsByClassName("tab-link");
+        for(var k = 0; k < tablinks.length; k++){
+            tablinks[k].className = tablinks[k].className.replace(" highlight", "");
+        }
+        document.getElementById(tabName+"_tab").className += " highlight";
+        document.getElementById(tabName).style.display = "block";
+
+    }
+
+
+    //functionality for button clicks on the left panel
+    function essaySection(sectionName){
+        //open the uploaded section first
+        openTab(false, 'uploaded');
+
+        //open section associated with this button
+        var i;
+        var x = document.getElementsByClassName("uploaded_area");
+        for (i = 0; i < x.length; i++) {
+            x[i].style.display = "none";
+        }
+
+        var sidelinks = document.getElementsByClassName("side-div");
+        for(var k = 0; k < sidelinks.length; k++){
+            sidelinks[k].className = sidelinks[k].className.replace(" side-highlight", "");
+        }
+
+        document.getElementById(sectionName+"_div").className += " side-highlight";
+        document.getElementById(sectionName+"_area").style.display = "block";
+    }
+
+        //sort the files based on the sort method
+    function sortSection(sortMethod) {
+
+        var sortButtons = document.getElementsByClassName("sort-buttons");
+        for(var k = 0; k < sortButtons.length; k++){
+            sortButtons[k].className = sortButtons[k].className.replace(" sort-buttons-highlight", "");
+        }
+
+        document.getElementById(sortMethod+"_button").className += " sort-buttons-highlight";
+
+        //grab data from essay array
+        var initData = JSON.parse('<%-JSON.stringify(essayArray)%>')
+
+        //sort data
+        if(sortMethod == "date"){
+            initData.inProgress.sort(function (a,b) {
+                if (a.date.toLowerCase() < b.date.toLowerCase())
+                    return 1;
+                if (a.date.toLowerCase() > b.date.toLowerCase())
+                    return -1;
+                return 0;
+            });
+            initData.reviewed.sort(function (a,b) {
+                if (a.date.toLowerCase() < b.date.toLowerCase())
+                    return 1;
+                if (a.date.toLowerCase() > b.date.toLowerCase())
+                    return -1;
+                return 0;
+            });
+            showData();
+        }
+        else  if(sortMethod == "name"){
+            initData.inProgress.sort(function (a,b) {
+                if (a.title.toLowerCase() > b.title.toLowerCase())
+                    return 1;
+                if (a.title.toLowerCase() < b.title.toLowerCase())
+                    return -1;
+                return 0;
+            });
+            initData.reviewed.sort(function (a,b) {
+                if (a.title.toLowerCase() > b.title.toLowerCase())
+                    return 1;
+                if (a.title.toLowerCase() < b.title.toLowerCase())
+                    return -1;
+                return 0;
+            });
+            showData();
+        }
+        else{
+            initData.inProgress.sort(function (a,b) {
+                if (a.subject.toLowerCase() > b.subject.toLowerCase())
+                    return 1;
+                if (a.subject.toLowerCase() < b.subject.toLowerCase())
+                    return -1;
+                return 0;
+            });
+            initData.reviewed.sort(function (a,b) {
+                if (a.subject.toLowerCase() > b.subject.toLowerCase())
+                    return 1;
+                if (a.subject.toLowerCase() < b.subject.toLowerCase())
+                    return -1;
+                return 0;
+            });
+            showData();
+        }
+
+
+        function showData() {
+            document.getElementById("display-inprogress-essays").innerHTML = "";
+
+            //scale background
+
+            var percentage = initData.inProgress.length/8 * 110;
+            document.getElementById("tab-section").style.height =  percentage<100 ? 100 : percentage + "%";
+
+            //add essay boxes
+            for(var i =0; i < initData.inProgress.length; i++) {
+                var essayTitle = initData.inProgress[i].title.length > 24 ? initData.inProgress[i].title.substring(0, 24) + "..." : initData.inProgress[i].title;
+                var essayDate = new Date(initData.inProgress[i].date);
+                var status = initData.inProgress[i].status == 'Not_Reviewed' ? 'Unopened by Reviewer' : 'Open by Reviewer';
+                document.getElementById("display-inprogress-essays").innerHTML += ""
+                    + "<div class='essay-box' style='float: left;'> "
+                    + "    <a href='/files/downloadFile?fileId="+ initData.inProgress[i].fileId  +"'>"
+                    + "    <img src='/images/essay_paper.png' height='200' width='230'>"
+                    + "    </a>"
+                    + "    <div class='essay-info-box'>"
+                    + "        <h6>" + essayTitle + "</h6>"
+//                    + initData.inProgress[i].subject + "<br>"
+                    + "         <img src='/images/icons/clock-grey.png'>"
+                    + "         <div style='display: inline-block; text-align:center; width: 100%; '>"
+                    + "             Submitted "+essayDate.toDateString().substring(3) + "<br>"
+                    +               status
+                    + "         </div>"
+                    +"     </div> "
+                    + "</div >";
+            }
+
+            document.getElementById("display-reviewed-essays").innerHTML = "";
+
+            for(var i =0; i < initData.reviewed.length; i++) {
+                var essayTitle = initData.reviewed[i].title.length > 24 ? initData.reviewed[i].title.substring(0, 24) + "..." : initData.reviewed[i].title;
+                var essayDate = new Date(initData.reviewed[i].date);
+                var downloadLink = '/files/downloadFile?fileId='+ initData.reviewed[i].fileId;
+                document.getElementById("display-reviewed-essays").innerHTML += ""
+                    + "<div class='essay-box' style='float: left;'> "
+                    + "    <img src='/images/essay_paper.png' height='200' width='230'>"
+                    + "    <div class='essay-info-box'>"
+                    + "        <h6>" + essayTitle + "</h6>"
+//                    + initData.inProgress[i].subject + "<br>"
+                    + "         <img src='/images/icons/clock-grey.png'>"
+                    + "         <div style='display: inline-block; text-align:center; width: 100%; '>"
+                    + "             Submitted "+essayDate.toDateString().substring(3) + "<br>"
+                    +               initData.reviewed[i].status
+                    + "         </div>"
+                    +"     </div> "
+                    +"     <div>"
+                    +"          <button class='download-button' onclick='openLinkNewWindow(\""+downloadLink+"\")'> Download </button>"
+                    +"          <button class='rating-button'> Rate Reviewer </button>"
+                    + "    </div>"
+                    + "</div >";
+            }
+        }
+
+    }
+    </script>
+
+</head>
+<body onload="sortSection('name')" >
+<header>
+    <% include ../partials/navbar%>
+</header>
+
+<div id="tab-side">
+    <button type="image" class="blue-btn" id="upload-btn" onclick="openTab(true, 'upload')"></button> <br>
+    <div id="side-links">
+        &nbsp; ESSAYS<br>
+        <div id="inProgress_div" class="side-div side-highlight">
+            <img src='/images/icons/check.png' class="side-img">
+            <button id="inProgress_button" class="side-link-button" onclick="essaySection('inProgress')"> Essays in progress </button>
+        </div>
+        <div id="reviewed_div" class="side-div">
+            <img src='/images/icons/clock-white.png' class="side-img">
+            <button id="reviewed_button" class="side-link-button " onclick="essaySection('reviewed')"> Reviewed Essays </button>
+        </div>
+
+    </div>
+</div>
+
+<div id="tab-section">
+    <div id="tab-bar" class="w3-bar">
+        <button name="uploaded" id="uploaded_tab" class="tab-link highlight" onclick="openTab(true, 'uploaded')">Uploaded</button>
+        <button name="upload" id="upload_tab" class="tab-link" onclick="openTab(true, 'upload')">Upload</button>
+        <% if(user.isReviewer){%>
+        <button name="review" id="review_tab" class="tab-link" onclick="openTab(true, 'review')">Review Essays</button>
+        <%}%>
+    </div>
+
+    <div id="uploaded" class="tab-area ">
+        <div id = "sort-buttons-div">
+            <button id="name_button" class="sort-buttons" onclick="sortSection('name')"> Name</button>
+            <button id="date_button" class="sort-buttons" onclick="sortSection('date')"> Date</button>
+            <button id="category_button" class="sort-buttons" onclick="sortSection('category')"> Category</button>
+        </div>
+
+        <div id="inProgress_area" class="uploaded_area">
+            <h1>Essays in Progress</h1>
+            <hr style="margin-top: -10px; border-width: 2px;">
+            <div id="display-inprogress-essays"></div>
+        </div>
+
+        <div id="reviewed_area" class="uploaded_area" style="display:none">
+            <h1>Reviewed Essays</h1>
+            <hr style="margin-top: -10px; border-width: 2px;">
+            <div id="display-reviewed-essays"></div>
+        </div>
+
+    </div>
+    <script>
+        function changeFilename(val) {
+            var res = val.split('\\');
+            document.getElementById('chosen-file-name').innerHTML = res[res.length-1];
+        }
+    </script>
+    <div id="upload" class="tab-area " style="display:none">
+        <h1>Upload an Essay</h1>
+        <hr style="margin-top: -10px; border-width: 2px;">
+        <div id="inner-left-box">
+            <form id="upload-form" name="upload-form" action='/files/uploadFile' method='post' encType="multipart/form-data">
+                <h6>ESSAY </h6>
+                <label> Essay Name: </label> <input type="text" name="essayName"><br>
+                <label> Topic:</label><select name="topic"> <br />
+                    <option value="default" selected="selected"></option>
+                    <option value="engineering">Engineering</option>
+                    <option value="social-sciences">Social Sciences</option>
+                    <option value="business">Business</option>
+                    <option value="physical-sciences">Physical Sciences</option>
+                    <option value="music">Music</option>
+                    <option value="art">Art</option>
+                    <option value="cinematic-arts">Cinematic Arts</option>
+                </select><br />
+                <label>Prompt: </label> <textarea form="upload-form" rows=3 cols=35 name="prompt"></textarea> <br>
+                <label>Page Length: </label> <input type="text" name="pageLength" style="width: 30px;"> <br>
+                <h6>PAYMENT </h6>
+                <label>Priority: </label><br>
+                    <input type="radio" name="priority" value="1" checked style="width:25px; height: 15px; ">Normal &nbsp;&nbsp;
+                    <input type="radio" name="priority" value="2" style="width:25px; height: 15px; ">High<br>
+                <label>Due Date: </label> <input type="date" name="date"> <br>
+                <label>Reward: </label> <input type="number" name="reward"> <br>
+                <h6>CLASS </h6>
+                <label>Department: </label> <input type="text" name="classPrefix" placeholder="eg. WRIT"> <br>
+                <label>CourseID: </label> <input type="number" name="classNumber" placeholder="eg. 150"> <br>
+                <br>
+                <label for="file" class="choose-file-button"> Choose File</label>
+                <input type="file" name="file" id= "file" accept="" onchange="changeFilename(this.value)">
+                <label id="chosen-file-name">No File Chosen</label>
+                <br><br>
+                <input type="submit" class="blue-btn" value="Upload File" id="upload-file-button">
+
+            </form>
+        </div>
+    </div>
+
+
+    <%if (user.isReviewer){%>
+    <div id="review" class="tab-area " style="display:none">
+        <h1>Review Center</h1>
+        <div id="search-container">
+            <div id="search-side-container" style="width: 200px;">
+                <h4>Search Filters </h4>
+                <hr>
+                Topic: <select name="topic" title="Topic">
+                    <option value="Engineering">Engineering</option>
+                    <option value="Social Sciences">Social Sciences</option>
+                </select> <br>
+                Page Length Min: <input style="width: 20px;"> <br>
+                Page Length Max <input style="width: 20px;"> <br>
+                <button name="apply-filter" class="accept-button" onclick="getSearchResults()">Apply filter</button>
+            </div>
+            <div id="results-container">
+
+            </div>
+        </div>
+    </div>
+    <%}%>
+
+    <div id="side-box">
+    </div>
+</div>
+
+</body>
+</html>
